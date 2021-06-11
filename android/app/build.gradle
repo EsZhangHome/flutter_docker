@@ -1,0 +1,89 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+apply plugin: 'com.android.application'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+
+//def keystorePropertiesFile = rootProject.file("key.properties")
+//def keystoreProperties = new Properties()
+//keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+android {
+    compileSdkVersion 29
+    aaptOptions.cruncherEnabled = false
+    aaptOptions.useNewCruncher = false
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId "com.example.flutter_docker"
+        minSdkVersion 16
+        targetSdkVersion 29
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            def flavor = variant.name
+            def versionName = variant.versionName
+            def createTime = new Date().format('yyyyMMddHHmm')
+            outputFileName = "flutter_docker_${flavor}_${versionName}_${createTime}.apk"
+        }
+    }
+
+//    signingConfigs {
+//        release {
+//            keyAlias keystoreProperties['keyAlias']
+//            keyPassword keystoreProperties['keyPassword']
+//            storeFile file(keystoreProperties['storeFile'])
+//            storePassword keystoreProperties['storePassword']
+//            v2SigningEnabled true
+//        }
+//    }
+
+    buildTypes {
+        release {
+            ndk {
+                abiFilters "armeabi-v7a"
+            }
+//            signingConfig signingConfigs.release
+            // minifyEnabled true // 使用代码压缩
+            // shrinkResources true // 自动清理无用资源
+            useProguard true
+            // 混淆使用的文件
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        debug {
+            ndk {
+                //这里要加上，否则debug包会出问题,后面三个为可选，x86建议加上不然部分模拟器回报错
+                abiFilters "armeabi", "armeabi-v7a", "arm64-v8a", "x86"
+            }
+        }
+    }
+}
+
+flutter {
+    source '../..'
+}
